@@ -1,6 +1,9 @@
 from asyncore import read
 from dataclasses import fields
-from .models import PostModel,StoryModel,CommentModel
+from pyexpat import model
+
+from users.models import FollowAndFollowingModel
+from .models import PostModel,StoryModel,CommentModel,NotificationModel,FavoritePosts
 from rest_framework import serializers
 from users.serializers import ProfileSerializer
 
@@ -19,7 +22,7 @@ class PostSerialzier(serializers.ModelSerializer):
     
     def create(self, validated_data):
         feed = PostModel.objects.create(
-            post_title = validated_data['post_title'],
+            post_title = validated_data.get('post_title'),
             post_image = validated_data['post_image'],
         )
         feed.save()
@@ -27,15 +30,15 @@ class PostSerialzier(serializers.ModelSerializer):
     
     def update(self,instance,validated_data):
         instance.post_title = validated_data.get('post_title',instance.post_title)
-        instance.post_image = validated_data.get('post_image',instance.post_image)
         instance.save()
         return instance
 
 class StorySerializer(serializers.ModelSerializer):
     story_creator = ProfileSerializer(read_only=True)
+    seen_user = ProfileSerializer(read_only=True,many=True)
     class Meta:
         model = StoryModel
-        fields=['id','story_image','story_creator','create_by']
+        fields=['id','story_image','story_creator','create_by','seen_user']
         extra_kwargs = {
             'story_creator': {'required': False},
             'story_image': {'required': False},
@@ -70,3 +73,19 @@ class CommentSerializer(serializers.ModelSerializer):
         )
         comments.save()
         return comments
+
+
+class NotificationsSerializers(serializers.ModelSerializer):
+    # notification_visible_to_user = ProfileSerializer()
+    following_user = ProfileSerializer()
+    post_like = PostSerialzier()
+
+    class Meta:
+        model = NotificationModel
+        fields = "__all__"
+
+class FavoritePostSerializer(serializers.ModelSerializer):
+    favorite_post = PostSerialzier()
+    class Meta:
+        model = FavoritePosts
+        fields=['id','favorite_post']

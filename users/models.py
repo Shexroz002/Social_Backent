@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
 class ProfileImage(models.Model):
     photo = models.ImageField(null=True,blank=True,upload_to='user_image/',default='user_image/userimage.jpg')
     date = models.DateTimeField(auto_now_add=True)
@@ -11,7 +10,7 @@ class ProfileImage(models.Model):
 
 
 class CustomUser(AbstractUser):
-    image = models.ManyToManyField(ProfileImage,blank=True,null=True)
+    image = models.ManyToManyField(ProfileImage,)
 
     def __str__(self):
         return self.username
@@ -32,3 +31,6 @@ class MessageFriendModel(models.Model):
 
     def __str__(self):
         return self.my_user.username
+
+
+

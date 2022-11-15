@@ -1,13 +1,13 @@
-from tkinter import PhotoImage
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
-from .models import CustomUser,ProfileImage
+from .models import CustomUser,ProfileImage,FollowAndFollowingModel
 
 class ProfileImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfileImage
-        fields = ('id','photo')
+        fields = ('id','photo','date')
         extra_kwargs = {
             'photo': {'required': False}
         }
@@ -58,7 +58,12 @@ class ProfileSerializer(serializers.ModelSerializer):
             'image': {'required': False},
             'password':{'required':False}
         }
-
+class UserListSerailer(serializers.ModelSerializer):
+    image = ProfileImageSerializer(many=True,read_only=True)
+    class Meta:
+        model = CustomUser
+        fields = ('id','username','last_name','first_name','image')
+        
     def update(self, instance, validated_data):
             instance.username = validated_data.get('username', instance.username)
             instance.email = validated_data.get('email', instance.email)
@@ -72,5 +77,7 @@ class FollowAndFollowingModelSerializer(serializers.ModelSerializer):
     my_by = ProfileSerializer(read_only=True)
     friend_by = ProfileSerializer(read_only=True)
     class Meta:
-        model = CustomUser
-        fields = ('id','friend_by','my_by')
+        model = FollowAndFollowingModel
+        fields = ('id','friend_by','my_by','data')
+
+
