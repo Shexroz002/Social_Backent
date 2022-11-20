@@ -3,7 +3,7 @@ from dataclasses import fields
 from pyexpat import model
 
 from users.models import FollowAndFollowingModel
-from .models import PostModel,StoryModel,CommentModel,NotificationModel,FavoritePosts
+from .models import PostModel,StoryModel,CommentModel,NotificationModel,FavoritePosts,ReadedPost
 from rest_framework import serializers
 from users.serializers import ProfileSerializer
 
@@ -89,3 +89,9 @@ class FavoritePostSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritePosts
         fields=['id','favorite_post']
+
+class ReadedPostSerializer(serializers.ModelSerializer):
+    post = PostSerialzier()
+    class Meta:
+        model = ReadedPost
+        fields=['id','post','status']

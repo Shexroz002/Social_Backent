@@ -8,7 +8,7 @@ from django.db.models import *
 from users.models import CustomUser, FollowAndFollowingModel
 from .models import NotificationModel, PostModel, StoryModel,CommentModel,FavoritePosts,ReadedPost
 from .serializers import \
-                        PostSerialzier,StorySerializer,\
+                        PostSerialzier,StorySerializer,ReadedPostSerializer,\
                         CommentSerializer,NotificationsSerializers , FavoritePostSerializer\
             
                         
@@ -211,26 +211,41 @@ class FavoritePostAllApiViews(views.APIView):
 class ReadedPostApiView(views.APIView):
     def get(self,request,id):
         post = get_object_or_404(PostModel,id=id)
-        if ReadedPost.objects.filter(client = request.user,post= post).contains():
-            return response.Response({'info':'This book has been added to the books to read'},\
-                                        status = status.HTTP_404_NOT_FOUND)
+        if ReadedPost.objects.filter(client = request.user,post= post).exists():
+            return response.Response({'info':'This book has been added to the books to read'},status = status.HTTP_404_NOT_FOUND)
         book_to_read = ReadedPost.objects.create(client = request.user,post= post).save()
-        return response.responses({'info':'This book was added successfully to the books to read'},\
-                                    status=status.HTTP_200_OK
-            )
+        return response.Response({'info':'This book was added successfully to the books to read',"data":PostSerialzier(book_to_read).data},status=status.HTTP_200_OK)
+    
     def post(self,request,id):
+        print('id',id)
         post = get_object_or_404(PostModel,id=id)
-        if ReadedPost.objects.filter(client = request.user,post= post).contains():
-            readed_book = get_object_or_404(ReadedPost,client = request.user,post= post)
+        if ReadedPost.objects.filter(client = request.user,post= post,status=False).exists():
+            readed_book = ReadedPost.objects.get(client = request.user,post= post,status=False)
             readed_book.status = True
             readed_book.save()
-            return response.Response({'info':readed_book.status},\
+            return response.Response(ReadedPostSerializer(readed_book).data,\
                                         status = status.HTTP_201_CREATED)
-        book_to_read = ReadedPost.objects.create(client = request.user,post= post).save()
-        return response.responses({'info':'This book isnt contain'},\
+
+        return response.Response({'info':'This book isnt contain'},\
                                     status=status.HTTP_400_BAD_REQUEST
             )
+    def delete(self,request,id):
+        post = get_object_or_404(PostModel,id=id)
+        if ReadedPost.objects.filter(client = request.user,post= post).exists():
+            book_to_read = ReadedPost.objects.filter(client = request.user,post= post)
+            book_to_read.delete()
+            return response.Response({'info':'This book has been deleted'},status = status.HTTP_404_NOT_FOUND)
+        
+        return response.Response({'info':'Not found'},status=status.HTTP_400_BAD_REQUEST)
 
 
+class ReadingPostApiView(views.APIView):
+    def get(self,request):
+        read_posts = ReadedPost.objects.filter(client = request.user,status=False)
+        return response.Response(ReadedPostSerializer(read_posts,many=True).data,status=status.HTTP_200_OK)
 
+class ReadPostApiView(views.APIView):
+    def get(self,request):
+        read_posts = ReadedPost.objects.filter(client = request.user,status=True)
+        return response.Response(ReadedPostSerializer(read_posts,many=True).data,status=status.HTTP_200_OK)
         

@@ -4,7 +4,7 @@ from .views import \
             PostLikeApiViews,StoryApiViews,\
             CommentsAPIviews,NotificationAPIView,\
             StoryIsSeenByUserAPIView,PeronalStoryAPIView,\
-            CommentsDeleteAPIviews,ReadedPostApiView
+            CommentsDeleteAPIviews,ReadedPostApiView,ReadingPostApiView,ReadPostApiView
 app_name = 'feed'
 
 urlpatterns = [
@@ -19,5 +19,7 @@ urlpatterns = [
     path('api/notifications',NotificationAPIView.as_view(),name = 'notifications'),# passed test
     path('api/favorite/post/all',FavoritePostAllApiViews.as_view(),name = 'favorite_all'),# passed test
     path('api/favorite/post/<int:id>',FavoritePostDetailApiViews.as_view(),name = 'favorite_detail'),# passed test
-    path('api/readed/book/<int:id>',ReadedPostApiView.as_view(),name = 'readed_book')# passed test
+    path('api/readed/book/<int:id>',ReadedPostApiView.as_view(),name = 'readed_book'),
+    path('api/reading/book',ReadingPostApiView.as_view(),name = 'reading_book'),
+    path('api/read/book',ReadPostApiView.as_view(),name = 'readeds_book'),
 ]
