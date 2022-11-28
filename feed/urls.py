@@ -4,7 +4,8 @@ from .views import \
             PostLikeApiViews,StoryApiViews,\
             CommentsAPIviews,NotificationAPIView,\
             StoryIsSeenByUserAPIView,PeronalStoryAPIView,\
-            CommentsDeleteAPIviews,ReadedPostApiView,ReadingPostApiView,ReadPostApiView
+            CommentsDeleteAPIviews,ReadedPostApiView,ReadingPostApiView,ReadPostApiView,\
+            BookTypeApiView
 app_name = 'feed'
 
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
     path('api/readed/book/<int:id>',ReadedPostApiView.as_view(),name = 'readed_book'),
     path('api/reading/book',ReadingPostApiView.as_view(),name = 'reading_book'),
     path('api/read/book',ReadPostApiView.as_view(),name = 'readeds_book'),
+    path('api/book/type',BookTypeApiView.as_view(),name = 'readeds_book'),
 ]

@@ -1,19 +1,22 @@
-from asyncore import read
-from dataclasses import fields
-from pyexpat import model
-
 from users.models import FollowAndFollowingModel
-from .models import PostModel,StoryModel,CommentModel,NotificationModel,FavoritePosts,ReadedPost
+from .models import PostModel,StoryModel,CommentModel,NotificationModel,FavoritePosts,ReadedPost,BookType
 from rest_framework import serializers
 from users.serializers import ProfileSerializer
 
 
+
+class BookTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookType
+        fields="__all__"
+
 class PostSerialzier(serializers.ModelSerializer):
     like = ProfileSerializer(many=True,read_only=True)
     post_creator = ProfileSerializer(read_only=True)
+    post_type = BookTypeSerializer(read_only=True)
     class Meta:
         model = PostModel
-        fields=['id','post_title','post_image','post_creator','create_by','update_by','like']
+        fields=['id','post_title','post_type','post_name','post_image','post_creator','create_by','update_by','like','comment_count']
         extra_kwargs = {
             'post_title': {'required': False},
             'post_image': {'required': True},
@@ -24,6 +27,7 @@ class PostSerialzier(serializers.ModelSerializer):
         feed = PostModel.objects.create(
             post_title = validated_data.get('post_title'),
             post_image = validated_data['post_image'],
+            post_name = validated_data['post_name'],
         )
         feed.save()
         return feed
@@ -95,3 +99,4 @@ class ReadedPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReadedPost
         fields=['id','post','status']
+

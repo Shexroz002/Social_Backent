@@ -1,14 +1,22 @@
 from django.db import models
 from users.models import CustomUser
 # Create your models here.
+class BookType(models.Model):
+    book_type = models.CharField(null=False,blank=False,max_length=100)
+    start = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.book_type
 
 class PostModel(models.Model):
     post_image = models.ImageField(upload_to = 'post_image/',blank=False,null=False)
     post_title = models.CharField(max_length=300,default='')
+    post_name = models.CharField(max_length=300,default='')
     post_creator = models.ForeignKey(CustomUser,on_delete=models.CASCADE,null=True,related_name='post_creator')
     create_by = models.DateTimeField(auto_now_add=True)
     update_by = models.DateTimeField(auto_now=True)
     like = models.ManyToManyField(CustomUser,related_name='like')
+    post_type = models.ForeignKey(BookType,on_delete=models.CASCADE,null=True,related_name='post_type')
+    comment_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.post_title
@@ -77,3 +85,4 @@ class ReadedPost(models.Model):
 
     def __str__(self):
         return self.client.username
+

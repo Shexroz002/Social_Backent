@@ -6,10 +6,11 @@ from rest_framework import views
 from django.shortcuts import get_object_or_404
 from django.db.models import *
 from users.models import CustomUser, FollowAndFollowingModel
-from .models import NotificationModel, PostModel, StoryModel,CommentModel,FavoritePosts,ReadedPost
+from .models import NotificationModel, PostModel, StoryModel,CommentModel,FavoritePosts,ReadedPost,BookType
 from .serializers import \
                         PostSerialzier,StorySerializer,ReadedPostSerializer,\
-                        CommentSerializer,NotificationsSerializers , FavoritePostSerializer\
+                        CommentSerializer,NotificationsSerializers , FavoritePostSerializer,\
+                        BookTypeSerializer
             
                         
 # Create your views here.
@@ -17,14 +18,87 @@ from .serializers import \
 class PostCreateAPIViews(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self,request):
-        feed = PostModel.objects.all()
-        return response.Response(PostSerialzier(feed,many=True).data,status = status.HTTP_200_OK)
+        friend=FollowAndFollowingModel.objects.filter(my_by=request.user)
+        if friend:
+            book=list()
+            for i in friend:
+                book+=list(PostModel.objects.filter(post_creator=i.friend_by).order_by('-create_by')[:2])
+            for i in range(0,len(book)):
+                for j in range(i+1,len(book)):
+                    if book[i].create_by <= book[j].create_by:
+                        book[i],book[j]=book[j],book[i]
+
+                    elif book[i].create_by == book[j].create_by:
+                        if book[i].like.count()+ book[i].comment_count <= \
+                                                            book[j].like.count()+ book[i].comment_count:
+                            book[i], book[j] = book[j], book[i]
+                        else:
+                            book[i]=book[i]
+                            book[j]=book[j]
+                    else:
+                        book[i] = book[i]
+                        book[j] = book[j]
+        else:
+            book=list(PostModel.objects.all())
+            for i in range(0,len(book)):
+                for j in range(i+1,len(book)):
+                    if book[i].like.count() + book[i].comment_count <= \
+                                                           book[j].like.count()+ book[i].comment_count:
+                        book[i],book[j]=book[j],book[i]
+                    elif book[i].like.count() + book[i].comment_count == \
+                                                            book[j].like.count() + book[i].comment_count:
+                        if book[i].date <= book[j].date:
+                            book[i],book[j]=book[j],book[i]
+
+
+                        else:
+                            book[i]=book[i]
+                            book[j]=book[j]
+                    else:
+                        book[i] = book[i]
+                        book[j] = book[j]
+        best_book = list(PostModel.objects.all())
+        for i in range(0,len(best_book)):
+                for j in range(i+1,len(best_book)):
+                    if best_book[i].like.count() +best_book[i].comment_count <= \
+                                                best_book[j].like.count() + best_book[i].comment_count:
+                        best_book[i],best_book[j]=best_book[j],best_book[i]
+        for i in best_book[:3]:
+                if i not in book:
+                    book.append(i)
+        like_count = list()
+        book_type = BookType.objects.all()
+        for i in book_type:
+            count =  NotificationModel.objects.filter(notification_visible_to_user=request.user,\
+                follow_or_like=0,post_like__post_type__book_type=i.book_type
+            ).count()
+            book_count=[i.book_type,count]
+            like_count.append(book_count)
+        for i in range(1,len(like_count)):
+            if like_count[0][1]<like_count[i][1]:
+                like_count[0],like_count[i]=like_count[i],like_count[0]
+        for type in like_count[:4]:
+            book_type = get_object_or_404(BookType,book_type=type[0])
+            type_book = list(PostModel.objects.filter(post_type = book_type))          
+            for i in range(0,len(type_book)):
+                for j in range(i+1,len(type_book)):
+                    if type_book[i].like.count() +type_book[i].comment_count <= \
+                                                type_book[j].like.count() + type_book[i].comment_count:
+                        type_book[i],type_book[j]=type_book[j],type_book[i]
+            for i in type_book[:3]:
+                if i not in book:
+                    book.append(i)
+            
+        return response.Response(PostSerialzier(tuple(book),many=True).data,status = status.HTTP_200_OK)
 
     def post(self,request):
         serializer = PostSerialzier(data = request.data)
         if serializer.is_valid():
+            print(request.data)
+            type = get_object_or_404(BookType,book_type=request.data.get('post_type'))
             post_deetail = serializer.save()
             post_deetail.post_creator = request.user
+            post_deetail.post_type = type
             post_deetail.save()
             return response.Response(PostSerialzier(post_deetail).data,status=status.HTTP_201_CREATED)
         else:
@@ -62,7 +136,8 @@ class PostDetailApiViews(views.APIView):
             feed.delete()
             return response.Response({'state':False},status=status.HTTP_404_NOT_FOUND)
         else:
-                return response.Response({'error':'You can not delete this post. Becouse, You did not create this post.'},status=status.HTTP_400_BAD_REQUEST)
+                return response.Response({'error':'You can not delete this post.\
+                                Becouse, You did not create this post.'},status=status.HTTP_400_BAD_REQUEST)
 
 
 class PostLikeApiViews(views.APIView):
@@ -149,6 +224,8 @@ class CommentsAPIviews(views.APIView):
             new_comment.create_by=user
             new_comment.feed_by=post
             new_comment.save()
+            post.comment_count += 1
+            post.save()
             return response.Response(CommentSerializer(new_comment).data,status=status.HTTP_201_CREATED)
         else:
             return response.Response({'eror':seriazliers.errors},status=status.HTTP_400_BAD_REQUEST)
@@ -248,4 +325,9 @@ class ReadPostApiView(views.APIView):
     def get(self,request):
         read_posts = ReadedPost.objects.filter(client = request.user,status=True)
         return response.Response(ReadedPostSerializer(read_posts,many=True).data,status=status.HTTP_200_OK)
+
+class BookTypeApiView(views.APIView):
+    def get(self,request):
+        book_type = BookType.objects.all()
+        return response.Response(BookTypeSerializer(book_type,many=True).data,status=status.HTTP_200_OK)
         
