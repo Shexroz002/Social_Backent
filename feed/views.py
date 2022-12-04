@@ -183,7 +183,7 @@ class PeronalStoryAPIView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def get(self,request,id):
         user = get_object_or_404(CustomUser,id=id)
-        story = get_object_or_404(StoryModel,story_creator=user)
+        story = StoryModel.objects.filter(story_creator=user).last()
         return response.Response(StorySerializer(story).data,status=status.HTTP_200_OK)
 
 class StoryApiViews(views.APIView):

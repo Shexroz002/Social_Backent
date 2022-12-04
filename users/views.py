@@ -59,7 +59,7 @@ class FollowersAPIView(views.APIView):
         user=get_object_or_404(CustomUser,id = id)
         friend=FollowAndFollowingModel.objects.filter(my_by=request.user, friend_by=user).exists()
         if friend:
-            chat=FollowAndFollowingModel.objects.get(my_by=request.user,friend_by=user)
+            chat=get_object_or_404(FollowAndFollowingModel,my_by=request.user,friend_by=user)
             chat.delete()
             return Response(status=status.HTTP_404_NOT_FOUND)
         else:
